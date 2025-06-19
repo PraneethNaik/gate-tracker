@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📚 GATE CSE 15-Day Tracker</title>
+  <style>
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #e0f7fa, #e1bee7);
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: auto;
+      background: #ffffff;
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: #6a1b9a;
+    }
+
+    textarea {
+      width: 100%;
+      height: 200px;
+      font-size: 16px;
+      padding: 15px;
+      border: 2px solid #ce93d8;
+      border-radius: 10px;
+      resize: none;
+      margin-bottom: 20px;
+    }
+
+    button {
+      display: block;
+      margin: 10px auto;
+      padding: 12px 30px;
+      background-color: #8e24aa;
+      color: white;
+      border: none;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #6a1b9a;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f3e5f5;
+      color: #4a148c;
+    }
+
+    .checkbox-cell {
+      text-align: center;
+    }
+
+    #progress-container {
+      width: 100%;
+      background-color: #eee;
+      border-radius: 20px;
+      margin-bottom: 30px;
+      overflow: hidden;
+    }
+
+    #progress-bar {
+      height: 30px;
+      background-color: #43a047;
+      width: 0%;
+      text-align: center;
+      line-height: 30px;
+      color: white;
+      font-weight: bold;
+      border-radius: 20px 0 0 20px;
+      transition: width 0.4s ease;
+    }
+
+    #goToInputBtn {
+      margin-top: 10px;
+      background-color: #3949ab;
+    }
+
+    #goToInputBtn:hover {
+      background-color: #1a237e;
+    }
+
+    #inputSection {
+      display: none;
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>✅ GATE CSE 15-Day Study Tracker (Table View)</h1>
+
+    <div id="progress-container">
+      <div id="progress-bar">0%</div>
+    </div>
+
+    <button id="goToInputBtn" onclick="toggleInputArea()">📋 Toggle Task Pasting Area</button>
+
+    <table id="taskTable">
+      <thead>
+        <tr>
+          <th>Day</th>
+          <th>Shift</th>
+          <th>Topic(s)</th>
+          <th>Duration</th>
+          <th>Done?</th>
+        </tr>
+      </thead>
+      <tbody id="taskBody"></tbody>
+    </table>
+
+    <div id="inputSection">
+      <hr style="margin: 40px 0;">
+      <p><strong>Paste your study plan below in the format:</strong> <code>Day, Shift, Topic(s), Duration</code></p>
+      <textarea id="taskInput" placeholder="e.g.
+Day 1, Shift 1, 2a. Intro to Recurrence, 34 min
+Day 1, Shift 2, 3a-3d. Tree Method + Examples, 57 min
+..."></textarea>
+      <button onclick="generateTable()">Generate Table Checklist</button>
+    </div>
+  </div>
+
+  <script>
+    function toggleInputArea() {
+      const inputSection = document.getElementById("inputSection");
+      if (inputSection.style.display === "none" || inputSection.style.display === "") {
+        inputSection.style.display = "block";
+        inputSection.scrollIntoView({ behavior: "smooth" });
+      } else {
+        inputSection.style.display = "none";
+      }
+    }
+
+    function generateTable() {
+      const input = document.getElementById("taskInput").value.trim();
+      localStorage.setItem("taskInput", input);
+
+      const lines = input.split('\n').filter(line => line.trim() !== '');
+      const taskBody = document.getElementById("taskBody");
+      taskBody.innerHTML = '';
+
+      lines.forEach((line, index) => {
+        const parts = line.split(',').map(part => part.trim());
+        if (parts.length < 4) return;
+
+        const tr = document.createElement("tr");
+
+        for (let i = 0; i < 4; i++) {
+          const td = document.createElement("td");
+          td.innerText = parts[i];
+          tr.appendChild(td);
+        }
+
+        const checkCell = document.createElement("td");
+        checkCell.className = "checkbox-cell";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.dataset.index = index;
+        checkbox.checked = localStorage.getItem("taskChecked_" + index) === "true";
+        checkbox.onchange = function () {
+          localStorage.setItem("taskChecked_" + index, checkbox.checked);
+          updateProgress();
+        };
+        checkCell.appendChild(checkbox);
+        tr.appendChild(checkCell);
+
+        taskBody.appendChild(tr);
+      });
+
+      updateProgress();
+      document.getElementById("taskTable").scrollIntoView({behavior: 'smooth'});
+    }
+
+    function updateProgress() {
+      const checkboxes = document.querySelectorAll("#taskTable input[type='checkbox']");
+      const total = checkboxes.length;
+      const completed = Array.from(checkboxes).filter(cb => cb.checked).length;
+      const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+      const progressBar = document.getElementById("progress-bar");
+      progressBar.style.width = percent + "%";
+      progressBar.innerText = percent + "%";
+    }
+
+    // Restore from localStorage on page load
+    window.onload = function () {
+      const savedInput = localStorage.getItem("taskInput");
+      if (savedInput) {
+        document.getElementById("taskInput").value = savedInput;
+        generateTable();
+      }
+    };
+  </script>
+</body>
+</html>
